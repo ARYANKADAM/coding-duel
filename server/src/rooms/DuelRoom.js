@@ -66,6 +66,7 @@ export class DuelRoom extends Room {
     this.sessionUsers = {};
     this.matchRoundsLog = [];
     this.matchEnded = false;
+    this.reconnectingSessions = new Set();
 
     this.onMessage("ready", (client) => {
       const player = this.state.players.get(client.sessionId);
@@ -361,7 +362,19 @@ export class DuelRoom extends Room {
       return;
     }
 
-   try {
+    // If we're already waiting on a reconnection for this exact session
+    // (e.g. a flaky connection dropping and retrying multiple times in
+    // quick succession), don't start a second overlapping
+    // allowReconnection() call — Colyseus doesn't support that, and it
+    // was causing an instant forfeit regardless of the timeout value.
+    if (this.reconnectingSessions.has(client.sessionId)) {
+      console.log(`Already awaiting reconnection for ${client.sessionId}, ignoring duplicate onLeave`);
+      return;
+    }
+
+    this.reconnectingSessions.add(client.sessionId);
+
+    try {
       await this.allowReconnection(client, 60);
       console.log(`Player ${client.sessionId} reconnected`);
     } catch (e) {
@@ -369,6 +382,8 @@ export class DuelRoom extends Room {
       this.state.players.delete(client.sessionId);
       this.clearAllTimers();
       await this.endMatch(client.sessionId);
+    } finally {
+      this.reconnectingSessions.delete(client.sessionId);
     }
   }
 
