@@ -17,6 +17,7 @@
     "@colyseus/core": "^0.17.44",
     "@colyseus/schema": "^4.0.28",
     "@colyseus/ws-transport": "^0.17.13",
+    "@sentry/node": "^10.68.0",
     "colyseus": "^0.17.10",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

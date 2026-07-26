@@ -7,8 +7,18 @@ import dotenv from "dotenv";
 import { connectDB } from "./lib/db.js";
 import { DuelRoom } from "./rooms/DuelRoom.js";
 import { LobbyRoom } from "./rooms/LobbyRoom.js";
+import * as Sentry from "@sentry/node";
+
 
 dotenv.config();
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 0.1,
+  });
+  console.log("Sentry initialized");
+}
 
 const PORT = Number(process.env.PORT) || 2567;
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:3000")
@@ -35,8 +45,11 @@ async function main() {
       app.use(express.json());
 
       app.get("/health", (req, res) => {
-        res.json({ status: "ok", rooms: "duel, lobby" });
-      });
+  if (req.query.crash) {
+    throw new Error("Deliberate test crash for Sentry verification");
+  }
+  res.json({ status: "ok", rooms: "duel, lobby" });
+});
     },
   });
 
@@ -58,6 +71,16 @@ async function main() {
   server.listen(PORT);
   console.log(`Colyseus server running on ws://localhost:${PORT}`);
 }
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+  Sentry.captureException(err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled rejection:", err);
+  Sentry.captureException(err);
+});
 
 main().catch((err) => {
   console.error("Failed to start server:", err);
