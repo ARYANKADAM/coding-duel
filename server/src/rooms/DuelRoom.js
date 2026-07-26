@@ -361,8 +361,8 @@ export class DuelRoom extends Room {
       return;
     }
 
-    try {
-      await this.allowReconnection(client, 20);
+   try {
+      await this.allowReconnection(client, 60);
       console.log(`Player ${client.sessionId} reconnected`);
     } catch (e) {
       console.log(`Player ${client.sessionId} did not reconnect in time — forfeiting`);
