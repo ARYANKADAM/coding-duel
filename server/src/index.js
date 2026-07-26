@@ -45,8 +45,8 @@ async function main() {
   // Express app configured above — this explicitly sets CORS headers at
   // Colyseus's own matchmaking controller level as a direct override.
   matchMaker.controller.getCorsHeaders = function (req) {
-    const origin = req.headers.origin;
-    const isAllowed = allowedOrigins.includes(origin);
+    const origin = req?.headers?.origin;
+    const isAllowed = origin && allowedOrigins.includes(origin);
     return {
       "Access-Control-Allow-Origin": isAllowed ? origin : allowedOrigins[0],
       "Access-Control-Allow-Credentials": "true",
