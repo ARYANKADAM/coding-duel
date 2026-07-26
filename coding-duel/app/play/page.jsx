@@ -111,6 +111,14 @@ export default function PlayPage() {
 
       try {
         duelRoom = await client.reconnect(savedToken);
+
+        // Reconnection tokens are single-use — get a fresh one now so a
+        // *second* disconnect later in the same match can also reconnect,
+        // instead of trying to reuse the now-invalidated original token.
+        if (duelRoom.reconnectionToken) {
+          sessionStorage.setItem(RECONNECT_KEY, duelRoom.reconnectionToken);
+        }
+
         attachDuelRoomHandlers(duelRoom);
         roomRef.current = duelRoom;
         setRoomId(duelRoom.roomId);
