@@ -8,6 +8,8 @@ import { DuelRoom } from "./rooms/DuelRoom.js";
 import { LobbyRoom } from "./rooms/LobbyRoom.js";
 import dotenv from "dotenv";
 import * as Sentry from "@sentry/node";
+import { SprintRoom } from "./rooms/SprintRoom.js";
+import { SprintLobbyRoom } from "./rooms/SprintLobbyRoom.js";
 
 
 dotenv.config();
@@ -26,6 +28,8 @@ async function main() {
     rooms: {
       duel: defineRoom(DuelRoom),
       lobby: defineRoom(LobbyRoom),
+       sprint: defineRoom(SprintRoom),
+      sprintLobby: defineRoom(SprintLobbyRoom),
     },
     express: (app) => {
       app.use(

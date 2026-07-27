@@ -24,6 +24,7 @@ const MatchSchema = new mongoose.Schema(
     scores: { type: Map, of: Number },
     eloChange: { type: Map, of: Number },
     status: { type: String, enum: ["in-progress", "completed", "aborted"], default: "in-progress" },
+    mode: { type: String, enum: ["duel", "sprint"], default: "duel" },
   },
   { timestamps: true }
 );

@@ -8,6 +8,9 @@ const UserSchema = new mongoose.Schema(
     elo: { type: Number, default: 1000 },
     matchesPlayed: { type: Number, default: 0 },
     wins: { type: Number, default: 0 },
+    mathElo: { type: Number, default: 1000 },
+    sprintMatchesPlayed: { type: Number, default: 0 },
+    sprintWins: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
