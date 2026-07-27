@@ -45,11 +45,17 @@ async function main() {
       app.use(express.json());
 
       app.get("/health", (req, res) => {
-  if (req.query.crash) {
-    throw new Error("Deliberate test crash for Sentry verification");
-  }
-  res.json({ status: "ok", rooms: "duel, lobby" });
-});
+        if (req.query.crash) {
+          throw new Error("Deliberate test crash for Sentry verification");
+        }
+        res.json({ status: "ok", rooms: "duel, lobby" });
+      });
+
+      // Must be registered AFTER all routes — this is what actually lets
+      // Sentry capture errors thrown inside Express route handlers, since
+      // Express catches those internally before they'd ever reach a
+      // global uncaughtException listener.
+      Sentry.setupExpressErrorHandler(app);
     },
   });
 
