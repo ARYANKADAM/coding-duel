@@ -47,12 +47,13 @@ export class SprintRoom extends Room {
     this.matchEnded = false;
 
     this.onMessage("ready", (client) => {
+      console.log(`[Sprint] Received "ready" from ${client.sessionId}, players in room: ${this.state.players.size}`);
       const player = this.state.players.get(client.sessionId);
-      if (player) this.checkAllReady();
-    });
-
-    this.onMessage("sprint-answer", (client, data) => {
-      this.handleAnswer(client, data);
+      if (player) {
+        this.checkAllReady();
+      } else {
+        console.log(`[Sprint] No player state found for ${client.sessionId}`);
+      }
     });
   }
 
@@ -72,6 +73,7 @@ export class SprintRoom extends Room {
   }
 
   onJoin(client, options, auth) {
+    console.log(`[Sprint] onJoin: ${auth.username} (${client.sessionId}), room size will be: ${this.state.players.size + 1}`);
     const player = new SprintPlayerState();
     player.username = auth.username;
     this.state.players.set(client.sessionId, player);
@@ -89,7 +91,9 @@ export class SprintRoom extends Room {
   }
 
   checkAllReady() {
+    console.log(`[Sprint] checkAllReady: size=${this.state.players.size}, maxClients=${this.maxClients}, status=${this.state.status}`);
     if (this.state.players.size === this.maxClients && this.state.status === "waiting") {
+      console.log("[Sprint] Conditions met, starting match");
       this.startMatch();
     }
   }
