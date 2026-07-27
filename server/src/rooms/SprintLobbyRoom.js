@@ -30,6 +30,7 @@ export class SprintLobbyRoom extends Room {
       this.state.waitingCount = this.queue.length;
       client.leave();
     });
+}
 
   async onAuth(client, options) {
     const clerkId = options?.clerkId;
