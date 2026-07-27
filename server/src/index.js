@@ -37,9 +37,6 @@ async function main() {
       app.use(express.json());
 
       app.get("/health", (req, res) => {
-        if (req.query.crash) {
-          throw new Error("Deliberate test crash for Sentry verification");
-        }
         res.json({ status: "ok", rooms: "duel, lobby" });
       });
 
