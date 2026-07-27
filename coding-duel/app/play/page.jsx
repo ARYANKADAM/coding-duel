@@ -5,6 +5,8 @@ import { useAuth } from "@clerk/nextjs";
 import client from "@/lib/colyseus";
 
 const RECONNECT_KEY = "codeduel_reconnect_token";
+const MAX_ATTEMPTS = 4;
+const BACKOFF_MS = [500, 1500, 3000, 5000]; // total ~10s of retrying
 
 export default function PlayPage() {
   const { isLoaded, userId } = useAuth();
@@ -39,6 +41,11 @@ export default function PlayPage() {
   const currentRoundRef = useRef(0);
   const hasConnectedRef = useRef(false);
   const clockOffsetRef = useRef(0);
+  const gameStateRef = useRef(gameState);
+
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
 
   useEffect(() => {
     if (!isLoaded || !userId) return;
@@ -103,35 +110,55 @@ export default function PlayPage() {
           players: playersObj,
         });
       });
+
+      room.onLeave((code) => {
+        const stillActive = gameStateRef.current.status === "in-progress";
+        if (code === 1000 || !stillActive) return;
+
+        console.log(`Room connection lost (code ${code}) mid-session — attempting recovery`);
+        const token = sessionStorage.getItem(RECONNECT_KEY);
+        if (token) {
+          attemptReconnect(token, false);
+        }
+      });
+    }
+
+    async function attemptReconnect(token, isInitial) {
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        try {
+          const room = await client.reconnect(token);
+
+          if (room.reconnectionToken) {
+            sessionStorage.setItem(RECONNECT_KEY, room.reconnectionToken);
+          }
+
+          attachDuelRoomHandlers(room);
+          roomRef.current = room;
+          duelRoom = room;
+          setRoomId(room.roomId);
+          setMySessionId(room.sessionId);
+          setConnectionStatus("connected");
+          setQueueStatus("matched");
+          console.log(`Reconnected (${isInitial ? "initial" : "mid-session"}), attempt ${attempt + 1}`);
+          return true;
+        } catch (err) {
+          console.log(`Reconnect attempt ${attempt + 1} failed:`, err.message);
+          if (attempt < MAX_ATTEMPTS - 1) {
+            setQueueStatus("reconnecting");
+            await new Promise((resolve) => setTimeout(resolve, BACKOFF_MS[attempt]));
+          }
+        }
+      }
+
+      console.log("All reconnect attempts exhausted");
+      sessionStorage.removeItem(RECONNECT_KEY);
+      return false;
     }
 
     async function tryReconnect() {
       const savedToken = sessionStorage.getItem(RECONNECT_KEY);
       if (!savedToken) return false;
-
-      try {
-        duelRoom = await client.reconnect(savedToken);
-
-        // Reconnection tokens are single-use — get a fresh one now so a
-        // *second* disconnect later in the same match can also reconnect,
-        // instead of trying to reuse the now-invalidated original token.
-        if (duelRoom.reconnectionToken) {
-          sessionStorage.setItem(RECONNECT_KEY, duelRoom.reconnectionToken);
-        }
-
-        attachDuelRoomHandlers(duelRoom);
-        roomRef.current = duelRoom;
-        setRoomId(duelRoom.roomId);
-        setMySessionId(duelRoom.sessionId);
-        setConnectionStatus("connected");
-        setQueueStatus("matched");
-        console.log("Reconnected to existing match");
-        return true;
-      } catch (err) {
-        console.log("Reconnect failed or token expired, clearing:", err.message);
-        sessionStorage.removeItem(RECONNECT_KEY);
-        return false;
-      }
+      return attemptReconnect(savedToken, true);
     }
 
     async function connect() {
@@ -153,6 +180,7 @@ export default function PlayPage() {
 
           if (duelRoom.reconnectionToken) {
             sessionStorage.setItem(RECONNECT_KEY, duelRoom.reconnectionToken);
+            console.log("Initial token saved:", duelRoom.reconnectionToken);
           }
 
           roomRef.current = duelRoom;
@@ -231,6 +259,10 @@ export default function PlayPage() {
       )}
 
       {isLoaded && userId && queueStatus === "connecting" && <p>Connecting…</p>}
+
+      {isLoaded && userId && queueStatus === "reconnecting" && (
+        <p className="text-gray-400 text-center py-12">Reconnecting to your match…</p>
+      )}
 
       {isLoaded && userId && queueStatus === "queueing" && (
         <div className="flex flex-col items-center gap-3 py-12">

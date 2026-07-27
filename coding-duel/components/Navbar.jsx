@@ -10,7 +10,8 @@ export default function Navbar() {
 
       <div className="flex items-center gap-4 text-sm text-gray-400">
         <a href="/">Home</a>
-        <a href="/play">Play</a>
+       <a href="/play">Coding Duel</a>
+        <a href="/play/math">Math Sprint</a>
         <a href="/leaderboard">Leaderboard</a>
 
         <Show when="signed-out">

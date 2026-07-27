@@ -30,6 +30,7 @@ const MatchSchema = new mongoose.Schema(
       of: Number,
     },
     status: { type: String, enum: ["in-progress", "completed", "aborted"], default: "in-progress" },
+    mode: { type: String, enum: ["duel", "sprint"], default: "duel" },
   },
   { timestamps: true }
 );
