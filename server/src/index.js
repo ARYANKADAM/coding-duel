@@ -3,22 +3,14 @@ import { matchMaker } from "@colyseus/core";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { connectDB } from "./lib/db.js";
 import { DuelRoom } from "./rooms/DuelRoom.js";
 import { LobbyRoom } from "./rooms/LobbyRoom.js";
+import dotenv from "dotenv";
 import * as Sentry from "@sentry/node";
 
 
 dotenv.config();
-
-if (process.env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    tracesSampleRate: 0.1,
-  });
-  console.log("Sentry initialized");
-}
 
 const PORT = Number(process.env.PORT) || 2567;
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:3000")
